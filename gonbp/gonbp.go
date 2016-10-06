@@ -55,6 +55,16 @@ var DefaultNbpClient = &NbpClient{Client:http.DefaultClient}
 // Current exchange rate for a currency
 func (c *NbpClient) Current(table string, currCode string) (*CurrencyRateList, error) {
 	url := fmt.Sprintf("%s/%s/%s", rates, table, currCode)
+	return c.fetchRates(url)
+}
+
+// Current exchange rate for a for given day
+func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s/%s", rates, table, currCode, day)
+	return c.fetchRates(url)
+}
+
+func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {
 	response, err := c.Client.Get(url)
 	if err != nil {
 		return nil, err

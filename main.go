@@ -29,4 +29,12 @@ func main() {
 		}
 		fmt.Println(result)
 	}
+
+	for _, code := range []string{"EUR", "USD", "GBP", "JPY", "IDR"} {
+		result, err := gonbp.DefaultNbpClient.Day("A", code, "2016-10-06")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
+	}
 }

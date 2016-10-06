@@ -17,9 +17,16 @@ This is an early work in progress.
 - more currency rate functions
 - description of usage in the read me
 
-## Description
+## Implementation Status
 
-TODO
+- [ ] Queries for complete tables
+- [ ] Queries for particular currency
+  * [X] Current exchange rate
+  * [ ] Series of latest N exchange rates
+  * [ ] Exchange rate of currency for today
+  * [X] Exchange rate of currency for given day
+  * [ ] Exchange rate of currency between two dates
+- [ ] Queries for gold prices
 
 ## Disclaimer
 

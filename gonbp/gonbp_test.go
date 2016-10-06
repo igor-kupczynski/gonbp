@@ -21,7 +21,12 @@ import (
 	"strings"
 	"fmt"
 	"reflect"
+	"net/http"
+	"time"
 )
+
+var nbpClient = &NbpClient{Client: &http.Client{Timeout: time.Second * 10}}
+
 
 func TestCurrencyRateJsonDecoding(t *testing.T) {
 	const rateBody = `{"no":"194/A/NBP/2016","effectiveDate":"2016-10-06","mid":4.2974}`
@@ -50,6 +55,22 @@ func TestCurrencyRateListJsonDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(expected, rates) {
+		t.Error(fmt.Sprintf("Expected %s, got %s", expected, rates))
+	}
+}
+
+func TestExchangeRateForGivenDay(t *testing.T) {
+	expected := CurrencyRateList{
+		Table: "A",
+		Currency: "euro",
+		Code: "EUR",
+		Rates: []CurrencyRate{{Number:"194/A/NBP/2016", EffectiveDate:"2016-10-06", Mid: "4.2974"}},
+	}
+	rates, err := nbpClient.Day("A", "EUR", "2016-10-06")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(expected, *rates) {
 		t.Error(fmt.Sprintf("Expected %s, got %s", expected, rates))
 	}
 }
