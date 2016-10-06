@@ -24,74 +24,38 @@ import (
 const apiRoot = "http://api.nbp.pl/api"
 const rates = apiRoot + "/exchangerates/rates"
 
-// Currencies
-
-// Currency represents a foreign currency together with NBP table that stores it
-type Currency struct {
-	// Currency exchange table to use
-	// "A" - table of average foreign currency exchange rates;
-	// "B" - table of average exchange rates of inconvertible currencies;
-	// "C" - table of purchase and sale exchange rates;
-	Table string
-
-	// Currency code
-	Code  string
-}
-
-
-// Predefined currencies
-var (
-	Eur = &Currency{"A", "EUR"}
-)
 
 // Average currency rate published a day
 type CurrencyRate struct {
-	// NBP exchange rate publication number
 	Number        string      `json:"no"`
-
-	// Rate publication date YYYY-MM-DD
 	EffectiveDate string      `json:"effectiveDate"`
-
-	// Average exchange rate stored as string to retain original precision
 	Mid           json.Number `json:"mid,Number"`
 }
 
 
 // List of rates spanning for multiple days
 type CurrencyRateList struct {
-	//NBP currency table
-	Table        string         `json:"table"`
-
-	// Currency name
-	CurrencyName string         `json:"currency"`
-
-	// Currency code
-	CurrencyCode string         `json:"code"`
-
-	// List of rates
-	Rates        []CurrencyRate `json:"rates"`
+	Table    string         `json:"table"`
+	Currency string         `json:"currency"`
+	Code     string         `json:"code"`
+	Rates    []CurrencyRate `json:"rates"`
 }
 
 
-// CurrencyRateClient is the NBP single currency exchange rate API client
-type CurrencyRateClient struct {
-	// Currency for client
-	Currency *Currency
-
+// NbpClient is client to connect to the NBP exchange rate api
+type NbpClient struct {
 	// Http client to use to fetch the rate
-	client   *http.Client
+	Client   *http.Client
 }
 
-// Create new CurrencyRateClient with default http client
-func NewCurrencyRateClient(curr *Currency) *CurrencyRateClient {
-	return &CurrencyRateClient{Currency: curr, client: http.DefaultClient}
-}
+// NbpClient with default paramters
+var DefaultNbpClient = &NbpClient{Client:http.DefaultClient}
 
 
 // Current exchange rate for a currency
-func (cc *CurrencyRateClient) Current() (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s", rates, cc.Currency.Table, cc.Currency.Code)
-	response, err := cc.client.Get(url)
+func (c *NbpClient) Current(table string, currCode string) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s", rates, table, currCode)
+	response, err := c.Client.Get(url)
 	if err != nil {
 		return nil, err
 	}

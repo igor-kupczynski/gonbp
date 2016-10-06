@@ -22,10 +22,11 @@ import (
 )
 
 func main() {
-	eurRate := gonbp.NewCurrencyRateClient(gonbp.Eur)
-	result, err := eurRate.Current()
-	if err != nil {
-		log.Fatal(err)
+	for _, code := range []string{"EUR", "USD", "GBP", "JPY", "IDR"} {
+		result, err := gonbp.DefaultNbpClient.Current("A", code)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
 	}
-	fmt.Println(result)
 }

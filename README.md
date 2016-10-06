@@ -14,9 +14,12 @@ This is an early work in progress.
 ### Next
 
 - error handling (nbp api error codes)
-- more currencies, including these with multiplier
 - more currency rate functions
-- basic integration tests
+- description of usage in the read me
+
+## Description
+
+TODO
 
 ## Disclaimer
 

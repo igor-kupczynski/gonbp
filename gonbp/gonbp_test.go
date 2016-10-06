@@ -40,8 +40,8 @@ func TestCurrencyRateListJsonDecoding(t *testing.T) {
 	const body = `{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"194/A/NBP/2016","effectiveDate":"2016-10-06","mid":4.2974}]}`
 	expected := CurrencyRateList{
 		Table: "A",
-		CurrencyName: "euro",
-		CurrencyCode: "EUR",
+		Currency: "euro",
+		Code: "EUR",
 		Rates: []CurrencyRate{{Number:"194/A/NBP/2016", EffectiveDate:"2016-10-06", Mid: "4.2974"}},
 	}
 	var rates CurrencyRateList
