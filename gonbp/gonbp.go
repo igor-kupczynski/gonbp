@@ -16,27 +16,92 @@ limitations under the License.
 package gonbp
 
 import (
-  "io"
-  "log"
-  "net/http"
-  "os"
+	"net/http"
+	"fmt"
+	"encoding/json"
 )
 
 const apiRoot = "http://api.nbp.pl/api"
-const rates = apiRoot + "/exchangerates/rates/"
+const rates = apiRoot + "/exchangerates/rates"
+
+// Currencies
+
+// Currency represents a foreign currency together with NBP table that stores it
+type Currency struct {
+	// Currency exchange table to use
+	// "A" - table of average foreign currency exchange rates;
+	// "B" - table of average exchange rates of inconvertible currencies;
+	// "C" - table of purchase and sale exchange rates;
+	Table string
+
+	// Currency code
+	Code  string
+}
+
+
+// Predefined currencies
+var (
+	Eur = &Currency{"A", "EUR"}
+)
+
+// Average currency rate published a day
+type CurrencyRate struct {
+	// NBP exchange rate publication number
+	Number        string      `json:"no"`
+
+	// Rate publication date YYYY-MM-DD
+	EffectiveDate string      `json:"effectiveDate"`
+
+	// Average exchange rate stored as string to retain original precision
+	Mid           json.Number `json:"mid,Number"`
+}
+
+
+// List of rates spanning for multiple days
+type CurrencyRateList struct {
+	//NBP currency table
+	Table        string         `json:"table"`
+
+	// Currency name
+	CurrencyName string         `json:"currency"`
+
+	// Currency code
+	CurrencyCode string         `json:"code"`
+
+	// List of rates
+	Rates        []CurrencyRate `json:"rates"`
+}
+
+
+// CurrencyRateClient is the NBP single currency exchange rate API client
+type CurrencyRateClient struct {
+	// Currency for client
+	Currency *Currency
+
+	// Http client to use to fetch the rate
+	client   *http.Client
+}
+
+// Create new CurrencyRateClient with default http client
+func NewCurrencyRateClient(curr *Currency) *CurrencyRateClient {
+	return &CurrencyRateClient{Currency: curr, client: http.DefaultClient}
+}
+
 
 // Current exchange rate for a currency
-func Current(table string, currency string) (string, error) {
-  response, err := http.Get(rates + "/" + table + "/" + currency)
-  if err != nil {
-          log.Fatal(err)
-          return "", err
-  }
-  defer response.Body.Close()
-  _, err = io.Copy(os.Stdout, response.Body)
-  if err != nil {
-          log.Fatal(err)
-          return "", err
-  }
-  return "", nil
+func (cc *CurrencyRateClient) Current() (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s", rates, cc.Currency.Table, cc.Currency.Code)
+	response, err := cc.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	rates := &CurrencyRateList{}
+	err = json.NewDecoder(response.Body).Decode(rates)
+	if err != nil {
+		return nil, err
+	}
+
+	return rates, nil
 }

@@ -16,9 +16,16 @@ limitations under the License.
 package main
 
 import (
-  "github.com/igor-kupczynski/gonbp/gonbp"
+	"github.com/igor-kupczynski/gonbp/gonbp"
+	"fmt"
+	"log"
 )
 
 func main() {
-  gonbp.Current("A", "EUR")
+	eurRate := gonbp.NewCurrencyRateClient(gonbp.Eur)
+	result, err := eurRate.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result)
 }
