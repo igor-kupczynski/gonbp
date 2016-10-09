@@ -25,7 +25,7 @@ func main() {
 	currencies := []string{"EUR", "USD", "GBP", "JPY", "IDR"}
 
 
-	fmt.Println("Current exchange rates")
+	fmt.Println("--- Current exchange rates")
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Current("A", code)
 		if err != nil {
@@ -34,20 +34,35 @@ func main() {
 		fmt.Println(result)
 	}
 
-	day := "2016-10-06"
-	fmt.Printf("Exchange rates for %s\n", day)
+	count := 3
+	fmt.Printf("--- Last %d exchange rates\n", count)
 	for _, code := range currencies {
-		result, err := gonbp.DefaultNbpClient.Day("A", code, day)
+		result, err := gonbp.DefaultNbpClient.Last("A", code, count)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println(result)
 	}
 
-	count := 3
-	fmt.Printf("Last %d exchange rates\n", count)
+	fmt.Println("--- Exchange rates for today\n", count)
 	for _, code := range currencies {
-		result, err := gonbp.DefaultNbpClient.Last("A", code, count)
+		result, err := gonbp.DefaultNbpClient.Today("A", code)
+		if err != nil {
+			switch err.(type) {
+			case gonbp.NbpApiError:
+				fmt.Printf("Can't find exchnage rate for today for %s\n", code)
+			default:
+				log.Fatal(err)
+			}
+		} else {
+			fmt.Println(result)
+		}
+	}
+
+	day := "2016-10-06"
+	fmt.Printf("--- Exchange rates for %s\n", day)
+	for _, code := range currencies {
+		result, err := gonbp.DefaultNbpClient.Day("A", code, day)
 		if err != nil {
 			log.Fatal(err)
 		}

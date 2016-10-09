@@ -69,17 +69,24 @@ func (c *NbpClient) Current(table string, currCode string) (*CurrencyRateList, e
 	return c.fetchRates(url)
 }
 
+// Latest n-exchange rates
+func (c *NbpClient) Last(table string, currCode string, n int) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s/last/%d", rates, table, currCode, n)
+	return c.fetchRates(url)
+}
+
+// Exchange rate for today
+func (c *NbpClient) Today(table string, currCode string) (*CurrencyRateList, error) {
+	return c.Day(table, currCode, "today")
+}
+
 // Current exchange rate for a for given day
 func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRateList, error) {
 	url := fmt.Sprintf("%s/%s/%s/%s", rates, table, currCode, day)
 	return c.fetchRates(url)
 }
 
-// Latest n-exchange rates
-func (c *NbpClient) Last(table string, currCode string, n int) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s/last/%d", rates, table, currCode, n)
-	return c.fetchRates(url)
-}
+
 
 
 func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {
