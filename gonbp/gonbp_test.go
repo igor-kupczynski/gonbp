@@ -74,3 +74,16 @@ func TestExchangeRateForGivenDay(t *testing.T) {
 		t.Error(fmt.Sprintf("Expected %s, got %s", expected, rates))
 	}
 }
+
+func TestApiException(t *testing.T) {
+	_, err := nbpClient.Day("A", "EUR", "2100-10-06")
+	if err == nil {
+		t.Error("NbpApiException expected")
+	}
+	if err.(NbpApiError).StatusCode != 400 {
+		t.Errorf("StatusCode == 400 expected, but got %d", err.(NbpApiError).StatusCode)
+	}
+	if !strings.Contains(err.Error(), "Invalid date range") {
+		t.Errorf("'Invalid date range' error  expected, but got %s", err.Error())
+	}
+}

@@ -13,7 +13,6 @@ This is an early work in progress.
 
 ### Next
 
-- error handling (nbp api error codes)
 - more currency rate functions
 - description of usage in the read me
 

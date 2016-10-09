@@ -25,6 +25,17 @@ const apiRoot = "http://api.nbp.pl/api"
 const rates = apiRoot + "/exchangerates/rates"
 
 
+// NBP API Error
+type NbpApiError struct {
+	StatusCode int
+	Message    string
+}
+
+func (c NbpApiError) Error() string {
+	return c.Message
+}
+
+
 // Average currency rate published a day
 type CurrencyRate struct {
 	Number        string      `json:"no"`
@@ -70,6 +81,10 @@ func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {
 		return nil, err
 	}
 	defer response.Body.Close()
+
+	if response.StatusCode >= 400 && response.StatusCode < 500 {
+		return nil, NbpApiError{response.StatusCode, response.Status}
+	}
 
 	rates := &CurrencyRateList{}
 	err = json.NewDecoder(response.Body).Decode(rates)
