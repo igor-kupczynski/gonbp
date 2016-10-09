@@ -44,7 +44,7 @@ func main() {
 		fmt.Println(result)
 	}
 
-	fmt.Println("--- Exchange rates for today\n", count)
+	fmt.Println("--- Exchange rates for today\n")
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Today("A", code)
 		if err != nil {
@@ -63,6 +63,17 @@ func main() {
 	fmt.Printf("--- Exchange rates for %s\n", day)
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Day("A", code, day)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
+	}
+
+	from := "2016-09-26"
+	to   := "2016-09-30"
+ 	fmt.Printf("--- Exchange between [%s, %s]\n", from, to)
+	for _, code := range currencies {
+		result, err := gonbp.DefaultNbpClient.DateRange("A", code, from, to)
 		if err != nil {
 			log.Fatal(err)
 		}

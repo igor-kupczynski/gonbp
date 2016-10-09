@@ -86,7 +86,11 @@ func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRat
 	return c.fetchRates(url)
 }
 
-
+// Exchange rates between two given days
+func (c *NbpClient) DateRange(table string, currCode string, fromDay string, toDay string) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s/%s/%s", rates, table, currCode, fromDay, toDay)
+	return c.fetchRates(url)
+}
 
 
 func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {

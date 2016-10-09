@@ -13,12 +13,12 @@ API to access the exchange rates](http://api.nbp.pl/en.html).
 
 ### Thin client
 - [ ] Queries for complete tables
-- [ ] Queries for particular currency
+- [X] Queries for particular currency
   * [X] Current exchange rate
   * [X] Series of latest N exchange rates
   * [X] Exchange rate of currency for today
   * [X] Exchange rate of currency for given day
-  * [ ] Exchange rate of currency between two dates
+  * [X] Exchange rate of currency between two dates
 - [ ] Queries for gold prices
 
 ## Disclaimer
