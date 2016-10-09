@@ -75,6 +75,13 @@ func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRat
 	return c.fetchRates(url)
 }
 
+// Latest n-exchange rates
+func (c *NbpClient) Last(table string, currCode string, n int) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s/last/%d", rates, table, currCode, n)
+	return c.fetchRates(url)
+}
+
+
 func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {
 	response, err := c.Client.Get(url)
 	if err != nil {

@@ -22,7 +22,11 @@ import (
 )
 
 func main() {
-	for _, code := range []string{"EUR", "USD", "GBP", "JPY", "IDR"} {
+	currencies := []string{"EUR", "USD", "GBP", "JPY", "IDR"}
+
+
+	fmt.Println("Current exchange rates")
+	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Current("A", code)
 		if err != nil {
 			log.Fatal(err)
@@ -30,8 +34,20 @@ func main() {
 		fmt.Println(result)
 	}
 
-	for _, code := range []string{"EUR", "USD", "GBP", "JPY", "IDR"} {
-		result, err := gonbp.DefaultNbpClient.Day("A", code, "2016-10-06")
+	day := "2016-10-06"
+	fmt.Printf("Exchange rates for %s\n", day)
+	for _, code := range currencies {
+		result, err := gonbp.DefaultNbpClient.Day("A", code, day)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
+	}
+
+	count := 3
+	fmt.Printf("Last %d exchange rates\n", count)
+	for _, code := range currencies {
+		result, err := gonbp.DefaultNbpClient.Last("A", code, count)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -21,7 +21,7 @@ This is an early work in progress.
 - [ ] Queries for complete tables
 - [ ] Queries for particular currency
   * [X] Current exchange rate
-  * [ ] Series of latest N exchange rates
+  * [X] Series of latest N exchange rates
   * [ ] Exchange rate of currency for today
   * [X] Exchange rate of currency for given day
   * [ ] Exchange rate of currency between two dates
