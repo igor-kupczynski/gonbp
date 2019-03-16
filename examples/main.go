@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/igor-kupczynski/gonbp"
 )
@@ -38,12 +39,15 @@ func ClientExamples(currencies []string) {
 			default:
 				log.Fatal(err)
 			}
-		} else {
-			fmt.Println(result)
 		}
+		fmt.Println(result)
 	}
 
-	day := "2016-10-06"
+	dayStr := "2016-10-06"
+	day, err := time.Parse(gonbp.DayFormat, dayStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("\n--- Exchange rates for %s\n", day)
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Day("A", code, day)
@@ -53,8 +57,15 @@ func ClientExamples(currencies []string) {
 		fmt.Println(result)
 	}
 
-	from := "2016-09-26"
-	to := "2016-09-30"
+	fromStr, toStr := "2016-09-26", "2016-09-30"
+	from, err := time.Parse(gonbp.DayFormat, fromStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	to, err := time.Parse(gonbp.DayFormat, toStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Printf("\n--- Exchange between [%s, %s]\n", from, to)
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.DateRange("A", code, from, to)

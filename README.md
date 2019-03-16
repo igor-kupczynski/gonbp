@@ -22,54 +22,65 @@ See the [examples](./examples) directory.
 - Queries for particular currency
     
     * Current exchange rate
-        ```go
-        result, err := gonbp.DefaultNbpClient.Current("A", "EUR")
-        if err != nil {
-            log.Fatal(err)
-        }
-        fmt.Println(result)
+        ```
+		result, err := gonbp.DefaultNbpClient.Current("A", "EUR")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
         ```
     
     * Series of latest N exchange rates
-        ```go
-        result, err := gonbp.DefaultNbpClient.Last("A", "EUR", 5)
-        if err != nil {
-            log.Fatal(err)
-        }
-        fmt.Println(result)
+        ```
+		result, err := gonbp.DefaultNbpClient.Last("A", "EUR", 5)		
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(result)
         ```
         
     * Exchange rate of currency for today
-        ```go
-        result, err := gonbp.DefaultNbpClient.Today("A", "EUR")
-        if err != nil {
-            switch err.(type) {
-            case gonbp.NbpAPIError:
-                fmt.Printf("Can't find exchnage rate for today for EUR\n")
-            default:
-                log.Fatal(err)
-            }
-        } else {
-            fmt.Println(result)
-        }
+        ```
+		result, err := gonbp.DefaultNbpClient.Today("A", "EUR")
+		if err != nil {
+			switch err.(type) {
+			case gonbp.NbpAPIError:
+				fmt.Printf("Can't find exchnage rate for today for %s\n", code)
+			default:
+				log.Fatal(err)
+			}
+		}
+		fmt.Println(result)
         ```
     
     * Exchange rate of currency for given day
-        ```go
-        result, err := gonbp.DefaultNbpClient.Day("A", "EUR", "2016-10-10")
+        ```
+        day, err := time.Parse(gonbp.DayFormat, "2016-10-06")
         if err != nil {
-              log.Fatal(err)
+            log.Fatal(err)
+        }
+        result, err := gonbp.DefaultNbpClient.Day("A", "EUR", day)
+        if err != nil {
+            log.Fatal(err)
         }
         fmt.Println(result)
         ```
     
     * Exchange rate of currency between two dates
-        ```go
-        result, err := gonbp.DefaultNbpClient.DateRange("A", "USD", "2016-09-01", "2016-09-15")
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(result)
+        ```
+        from, err := time.Parse(gonbp.DayFormat, "2016-09-26")
+        if err != nil {
+            log.Fatal(err)
+        }
+        to, err := time.Parse(gonbp.DayFormat, "2016-09-30")
+        if err != nil {
+            log.Fatal(err)
+        }
+        result, err := gonbp.DefaultNbpClient.DateRange("A", code, from, to)
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Println(result)
         ```
 
 

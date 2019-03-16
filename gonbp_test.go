@@ -6,11 +6,18 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
+const dayStr = "2016-10-06"
+
 func TestCurrencyRateJsonDecoding(t *testing.T) {
+	day, err := time.Parse(DayFormat, dayStr)
+	if err != nil {
+		t.Fatal(err)
+	}
 	const rateBody = `{"no":"194/A/NBP/2016","effectiveDate":"2016-10-06","mid":4.2974}`
-	expected := CurrencyRate{Number: "194/A/NBP/2016", EffectiveDate: "2016-10-06", Mid: "4.2974"}
+	expected := CurrencyRate{Number: "194/A/NBP/2016", EffectiveDate: day, Mid: "4.2974"}
 	var rate CurrencyRate
 
 	if err := json.NewDecoder(strings.NewReader(rateBody)).Decode(&rate); err != nil {
@@ -22,12 +29,16 @@ func TestCurrencyRateJsonDecoding(t *testing.T) {
 }
 
 func TestCurrencyRateListJsonDecoding(t *testing.T) {
+	day, err := time.Parse(DayFormat, dayStr)
+	if err != nil {
+		t.Fatal(err)
+	}
 	const body = `{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"194/A/NBP/2016","effectiveDate":"2016-10-06","mid":4.2974}]}`
 	expected := CurrencyRateList{
 		Table:    "A",
 		Currency: "euro",
 		Code:     "EUR",
-		Rates:    []CurrencyRate{{Number: "194/A/NBP/2016", EffectiveDate: "2016-10-06", Mid: "4.2974"}},
+		Rates:    []CurrencyRate{{Number: "194/A/NBP/2016", EffectiveDate: day, Mid: "4.2974"}},
 	}
 	var rates CurrencyRateList
 
@@ -40,13 +51,17 @@ func TestCurrencyRateListJsonDecoding(t *testing.T) {
 }
 
 func TestExchangeRateForGivenDay(t *testing.T) {
+	day, err := time.Parse(DayFormat, dayStr)
+	if err != nil {
+		t.Fatal(err)
+	}
 	expected := CurrencyRateList{
 		Table:    "A",
 		Currency: "euro",
 		Code:     "EUR",
-		Rates:    []CurrencyRate{{Number: "194/A/NBP/2016", EffectiveDate: "2016-10-06", Mid: "4.2974"}},
+		Rates:    []CurrencyRate{{Number: "194/A/NBP/2016", EffectiveDate: day, Mid: "4.2974"}},
 	}
-	rates, err := DefaultNbpClient.Day("A", "EUR", "2016-10-06")
+	rates, err := DefaultNbpClient.Day("A", "EUR", day)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +71,11 @@ func TestExchangeRateForGivenDay(t *testing.T) {
 }
 
 func TestApiException(t *testing.T) {
-	_, err := DefaultNbpClient.Day("A", "EUR", "2100-10-06")
+	day, err := time.Parse(DayFormat, "2100-10-06")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = DefaultNbpClient.Day("A", "EUR", day)
 	if err == nil {
 		t.Error("NbpAPIError expected")
 	}

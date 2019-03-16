@@ -9,6 +9,9 @@ import (
 
 const apiRoot = "http://api.nbp.pl/api"
 
+// DayFormat is the format in which NBP API expects dates
+const DayFormat = "2006-01-02"
+
 // NbpAPIError encapsulates the errors returned by NBP API
 type NbpAPIError struct {
 	StatusCode int
@@ -21,9 +24,31 @@ func (c NbpAPIError) Error() string {
 
 // CurrencyRate represents an average currency rate published for a day
 type CurrencyRate struct {
+	Number        string
+	EffectiveDate time.Time
+	Mid           json.Number
+}
+
+// rawRates represent the rates as provided by the NBP api
+type rawRates struct {
 	Number        string      `json:"no"`
 	EffectiveDate string      `json:"effectiveDate"`
 	Mid           json.Number `json:"mid,Number"`
+}
+
+func (r *CurrencyRate) UnmarshalJSON(j []byte) error {
+	var err error
+	var raw rawRates
+	if err = json.Unmarshal(j, &raw); err != nil {
+		return err
+	}
+
+	if r.EffectiveDate, err = time.Parse(DayFormat, raw.EffectiveDate); err != nil {
+		return err
+	}
+	r.Number = raw.Number
+	r.Mid = raw.Mid
+	return nil
 }
 
 // CurrencyRateList of rates spanning for multiple days
@@ -63,18 +88,19 @@ func (c *NbpClient) Last(table string, currCode string, n int) (*CurrencyRateLis
 
 // Today exchange rate
 func (c *NbpClient) Today(table string, currCode string) (*CurrencyRateList, error) {
-	return c.Day(table, currCode, "today")
+	url := fmt.Sprintf("%s/%s/today", table, currCode)
+	return c.fetchRates(url)
 }
 
 // Day is an exchange rate for a given day
-func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s", table, currCode, day)
+func (c *NbpClient) Day(table string, currCode string, day time.Time) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s", table, currCode, timeToDay(day))
 	return c.fetchRates(url)
 }
 
 // DateRange returns exchanges rates for the given date range
-func (c *NbpClient) DateRange(table string, currCode string, fromDay string, toDay string) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s/%s", table, currCode, fromDay, toDay)
+func (c *NbpClient) DateRange(table string, currCode string, fromDay time.Time, toDay time.Time) (*CurrencyRateList, error) {
+	url := fmt.Sprintf("%s/%s/%s/%s", table, currCode, timeToDay(fromDay), timeToDay(toDay))
 	return c.fetchRates(url)
 }
 
@@ -96,4 +122,8 @@ func (c *NbpClient) fetchRates(url string) (*CurrencyRateList, error) {
 	}
 
 	return rates, nil
+}
+
+func timeToDay(t time.Time) string {
+	return t.Format(DayFormat)
 }
