@@ -7,9 +7,9 @@ Republic of Poland. Among other tasks it publishes the official exchange rate
 of Złoty (the Polish currency) against other currencies. [NBP provides an
 API to access the exchange rates](http://api.nbp.pl/en.html).
 
-**Note** This is an early work in progress.
+**Note** This is a work in progress.
 
-### Thin client
+### Client
 
 This is a thin wrapper around the API provided by NBP. Its aim is to provide 
 a 1:1 implementation of the functions available in the NBP Currency Exchange
@@ -44,7 +44,7 @@ See the [examples](./examples) directory.
         result, err := gonbp.DefaultNbpClient.Today("A", "EUR")
         if err != nil {
             switch err.(type) {
-            case gonbp.NbpApiError:
+            case gonbp.NbpAPIError:
                 fmt.Printf("Can't find exchnage rate for today for EUR\n")
             default:
                 log.Fatal(err)
@@ -73,24 +73,26 @@ See the [examples](./examples) directory.
         ```
 
 
-This project is intended to run as a library, to check the examples run it as
-a program.
+This project is intended to be included as a library, but you can run the
+examples as a command.
 
-```
-$ go run main.go
+```sh
+$ cd examples/
+examples$ go run .
+
 --- Current exchange rates
-&{A euro EUR [{195/A/NBP/2016 2016-10-07 4.2853}]}
-&{A dolar amerykański USD [{195/A/NBP/2016 2016-10-07 3.8505}]}
-&{A funt szterling GBP [{195/A/NBP/2016 2016-10-07 4.7872}]}
-&{A jen (Japonia) JPY [{195/A/NBP/2016 2016-10-07 0.03708}]}
-&{A rupia indonezyjska IDR [{195/A/NBP/2016 2016-10-07 0.00029653}]}
+&{A euro EUR [{053/A/NBP/2019 2019-03-15 4.3037}]}
+&{A dolar amerykański USD [{053/A/NBP/2019 2019-03-15 3.8014}]}
+&{A funt szterling GBP [{053/A/NBP/2019 2019-03-15 5.0406}]}
+&{A jen (Japonia) JPY [{053/A/NBP/2019 2019-03-15 0.034044}]}
+&{A rupia indonezyjska IDR [{053/A/NBP/2019 2019-03-15 0.00026657}]}
 
 --- Last 3 exchange rates
-&{A euro EUR [{193/A/NBP/2016 2016-10-05 4.3014} {194/A/NBP/2016 2016-10-06 4.2974} {195/A/NBP/2016 2016-10-07 4.2853}]}
-&{A dolar amerykański USD [{193/A/NBP/2016 2016-10-05 3.8307} {194/A/NBP/2016 2016-10-06 3.8405} {195/A/NBP/2016 2016-10-07 3.8505}]}
-&{A funt szterling GBP [{193/A/NBP/2016 2016-10-05 4.8783} {194/A/NBP/2016 2016-10-06 4.8873} {195/A/NBP/2016 2016-10-07 4.7872}]}
-&{A jen (Japonia) JPY [{193/A/NBP/2016 2016-10-05 0.03724} {194/A/NBP/2016 2016-10-06 0.03705} {195/A/NBP/2016 2016-10-07 0.03708}]}
-&{A rupia indonezyjska IDR [{193/A/NBP/2016 2016-10-05 0.00029477} {194/A/NBP/2016 2016-10-06 0.00029568} {195/A/NBP/2016 2016-10-07 0.00029653}]}
+&{A euro EUR [{051/A/NBP/2019 2019-03-13 4.3006} {052/A/NBP/2019 2019-03-14 4.3015} {053/A/NBP/2019 2019-03-15 4.3037}]}
+&{A dolar amerykański USD [{051/A/NBP/2019 2019-03-13 3.8077} {052/A/NBP/2019 2019-03-14 3.8018} {053/A/NBP/2019 2019-03-15 3.8014}]}
+&{A funt szterling GBP [{051/A/NBP/2019 2019-03-13 5.0013} {052/A/NBP/2019 2019-03-14 5.0398} {053/A/NBP/2019 2019-03-15 5.0406}]}
+&{A jen (Japonia) JPY [{051/A/NBP/2019 2019-03-13 0.034201} {052/A/NBP/2019 2019-03-14 0.03403} {053/A/NBP/2019 2019-03-15 0.034044}]}
+&{A rupia indonezyjska IDR [{051/A/NBP/2019 2019-03-13 0.00026693} {052/A/NBP/2019 2019-03-14 0.00026648} {053/A/NBP/2019 2019-03-15 0.00026657}]}
 
 --- Exchange rates for today
 Can't find exchnage rate for today for EUR
@@ -112,12 +114,13 @@ Can't find exchnage rate for today for IDR
 &{A funt szterling GBP [{186/A/NBP/2016 2016-09-26 4.9560} {187/A/NBP/2016 2016-09-27 4.9573} {188/A/NBP/2016 2016-09-28 4.9717} {189/A/NBP/2016 2016-09-29 4.9837} {190/A/NBP/2016 2016-09-30 4.9962}]}
 &{A jen (Japonia) JPY [{186/A/NBP/2016 2016-09-26 0.038081} {187/A/NBP/2016 2016-09-27 0.038018} {188/A/NBP/2016 2016-09-28 0.037981} {189/A/NBP/2016 2016-09-29 0.037798} {190/A/NBP/2016 2016-09-30 0.038171}]}
 &{A rupia indonezyjska IDR [{186/A/NBP/2016 2016-09-26 0.0002941} {187/A/NBP/2016 2016-09-27 0.00029508} {188/A/NBP/2016 2016-09-28 0.00029557} {189/A/NBP/2016 2016-09-29 0.00029561} {190/A/NBP/2016 2016-09-30 0.00029533}]}
+
 ```
 
 
 ## Implementation Status
 
-* **Thin client**
+* **Client**
     - [ ] Queries for complete tables
     - [X] Queries for particular currency
         * [X] Current exchange rate
@@ -126,6 +129,10 @@ Can't find exchnage rate for today for IDR
         * [X] Exchange rate of currency for given day
         * [X] Exchange rate of currency between two dates
     - [ ] Queries for gold prices
+
+## Reach out
+
+Let me know if my go sucks, or suggest an improvements to this lib.
 
 ## Disclaimer
 
