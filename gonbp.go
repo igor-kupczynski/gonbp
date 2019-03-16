@@ -14,12 +14,13 @@ const DayFormat = "2006-01-02"
 
 // NbpAPIError encapsulates the errors returned by NBP API
 type NbpAPIError struct {
+	Url        string
 	StatusCode int
 	Message    string
 }
 
 func (c NbpAPIError) Error() string {
-	return c.Message
+	return c.Message + " when accessing " + c.Url
 }
 
 // CurrencyRate represents an average currency rate published for a day
@@ -112,7 +113,7 @@ func (c *NbpClient) fetchRates(url string) (*CurrencyRateList, error) {
 	defer response.Body.Close()
 
 	if response.StatusCode >= 400 && response.StatusCode < 500 {
-		return nil, NbpAPIError{response.StatusCode, response.Status}
+		return nil, NbpAPIError{url, response.StatusCode, response.Status}
 	}
 
 	rates := &CurrencyRateList{}
