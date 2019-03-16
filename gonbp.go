@@ -1,50 +1,32 @@
-/*
-Copyright 2016 Igor Kupczynski
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package gonbp
 
 import (
-	"net/http"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
 )
 
 const apiRoot = "http://api.nbp.pl/api"
-const rates = apiRoot + "/exchangerates/rates"
 
-
-// NBP API Error
-type NbpApiError struct {
+// NbpAPIError encapsulates the errors returned by NBP API
+type NbpAPIError struct {
 	StatusCode int
 	Message    string
 }
 
-func (c NbpApiError) Error() string {
+func (c NbpAPIError) Error() string {
 	return c.Message
 }
 
-
-// Average currency rate published a day
+// CurrencyRate represents an average currency rate published for a day
 type CurrencyRate struct {
 	Number        string      `json:"no"`
 	EffectiveDate string      `json:"effectiveDate"`
 	Mid           json.Number `json:"mid,Number"`
 }
 
-
-// List of rates spanning for multiple days
+// CurrencyRateList of rates spanning for multiple days
 type CurrencyRateList struct {
 	Table    string         `json:"table"`
 	Currency string         `json:"currency"`
@@ -52,56 +34,59 @@ type CurrencyRateList struct {
 	Rates    []CurrencyRate `json:"rates"`
 }
 
-
 // NbpClient is client to connect to the NBP exchange rate api
 type NbpClient struct {
 	// Http client to use to fetch the rate
-	Client   *http.Client
+	Client *http.Client
+
+	// API root
+	RatesAPIRoot string
 }
 
-// NbpClient with default paramters
-var DefaultNbpClient = &NbpClient{Client:http.DefaultClient}
-
+// DefaultNbpClient is a client with default parameters
+var DefaultNbpClient = &NbpClient{
+	Client:       &http.Client{Timeout: time.Second * 5},
+	RatesAPIRoot: apiRoot + "/exchangerates/rates",
+}
 
 // Current exchange rate for a currency
 func (c *NbpClient) Current(table string, currCode string) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s", rates, table, currCode)
+	url := fmt.Sprintf("%s/%s", table, currCode)
 	return c.fetchRates(url)
 }
 
-// Latest n-exchange rates
+// Last n-exchange rates
 func (c *NbpClient) Last(table string, currCode string, n int) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s/last/%d", rates, table, currCode, n)
+	url := fmt.Sprintf("%s/%s/last/%d", table, currCode, n)
 	return c.fetchRates(url)
 }
 
-// Exchange rate for today
+// Today exchange rate
 func (c *NbpClient) Today(table string, currCode string) (*CurrencyRateList, error) {
 	return c.Day(table, currCode, "today")
 }
 
-// Current exchange rate for a for given day
+// Day is an exchange rate for a given day
 func (c *NbpClient) Day(table string, currCode string, day string) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s/%s", rates, table, currCode, day)
+	url := fmt.Sprintf("%s/%s/%s", table, currCode, day)
 	return c.fetchRates(url)
 }
 
-// Exchange rates between two given days
+// DateRange returns exchanges rates for the given date range
 func (c *NbpClient) DateRange(table string, currCode string, fromDay string, toDay string) (*CurrencyRateList, error) {
-	url := fmt.Sprintf("%s/%s/%s/%s/%s", rates, table, currCode, fromDay, toDay)
+	url := fmt.Sprintf("%s/%s/%s/%s", table, currCode, fromDay, toDay)
 	return c.fetchRates(url)
 }
 
-
-func (c *NbpClient) fetchRates(url string)  (*CurrencyRateList, error) {
-	response, err := c.Client.Get(url)
+func (c *NbpClient) fetchRates(url string) (*CurrencyRateList, error) {
+	response, err := c.Client.Get(c.RatesAPIRoot + "/" + url)
 	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode >= 400 && response.StatusCode < 500 {
-		return nil, NbpApiError{response.StatusCode, response.Status}
+		return nil, NbpAPIError{response.StatusCode, response.Status}
 	}
 
 	rates := &CurrencyRateList{}

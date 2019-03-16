@@ -1,13 +1,14 @@
-package examples
+package main
 
 import (
 	"fmt"
-	"github.com/igor-kupczynski/gonbp/gonbp"
 	"log"
+
+	"github.com/igor-kupczynski/gonbp"
 )
 
-// Usage examples of the thin client
-func ThinClientExamples(currencies []string) {
+// ClientExamples shows how to use the gonbp client
+func ClientExamples(currencies []string) {
 	fmt.Println("\n--- Current exchange rates")
 	for _, code := range currencies {
 		result, err := gonbp.DefaultNbpClient.Current("A", code)
@@ -32,7 +33,7 @@ func ThinClientExamples(currencies []string) {
 		result, err := gonbp.DefaultNbpClient.Today("A", code)
 		if err != nil {
 			switch err.(type) {
-			case gonbp.NbpApiError:
+			case gonbp.NbpAPIError:
 				fmt.Printf("Can't find exchnage rate for today for %s\n", code)
 			default:
 				log.Fatal(err)
@@ -62,4 +63,9 @@ func ThinClientExamples(currencies []string) {
 		}
 		fmt.Println(result)
 	}
+}
+
+func main() {
+	currencies := []string{"EUR", "USD", "GBP", "JPY", "IDR"}
+	ClientExamples(currencies)
 }
