@@ -3,11 +3,12 @@ package gonbp
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/shopspring/decimal"
+	"gonbp/internal/nbpapi"
 	"testing"
 )
 
-func TestRate(t *testing.T) {
-	nbp := New()
+func TestIntegrationRate(t *testing.T) {
+	nbp := Default()
 
 	t.Run("USD happy case", func(t *testing.T) {
 		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"043/A/NBP/2022","effectiveDate":"2022-03-03","mid":4.3257}]}
@@ -45,7 +46,7 @@ func TestRate(t *testing.T) {
 
 	t.Run("Not a working day", func(t *testing.T) {
 		// 404 NotFound - Not Found - Brak danych
-		wantErr := ErrNoExchangeRateForGivenDay{Day: day(2022, 4, 17)}
+		wantErr := nbpapi.ErrNoExchangeRateForGivenDay
 		_, gotErr := nbp.Rate(EUR, day(2022, 4, 17))
 		if gotErr != wantErr {
 			t.Errorf("Rate() error = %v, want %v", gotErr, wantErr)
@@ -54,7 +55,7 @@ func TestRate(t *testing.T) {
 
 	t.Run("Non-existing currency", func(t *testing.T) {
 		// 404 NotFound
-		wantErr := ErrNoRatesForCurrency{Curr: "DOGE"}
+		wantErr := nbpapi.ErrNoRatesForCurrency
 		_, gotErr := nbp.Rate("DOGE", day(2022, 4, 15))
 		if gotErr != wantErr {
 			t.Errorf("Rate() error = %v, want %v", gotErr, wantErr)
@@ -62,8 +63,8 @@ func TestRate(t *testing.T) {
 	})
 }
 
-func TestPreviousRate(t *testing.T) {
-	nbp := New()
+func TestIntegrationPreviousRate(t *testing.T) {
+	nbp := Default()
 
 	t.Run("USD go back over a long weekend happy case", func(t *testing.T) {
 		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.2865}]}
@@ -84,7 +85,7 @@ func TestPreviousRate(t *testing.T) {
 
 	t.Run("Non-existing currency", func(t *testing.T) {
 		// 404 NotFound
-		wantErr := ErrNoRatesForCurrency{Curr: "DOGE"}
+		wantErr := nbpapi.ErrNoRatesForCurrency
 		_, gotErr := nbp.Rate("DOGE", day(2022, 4, 16))
 		if gotErr != wantErr {
 			t.Errorf("Rate() error = %v, want %v", gotErr, wantErr)

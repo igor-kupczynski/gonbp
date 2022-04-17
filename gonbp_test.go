@@ -1,10 +1,9 @@
 package gonbp
 
 import (
+	"fmt"
 	"github.com/shopspring/decimal"
-	"io"
-	"net/http"
-	"strings"
+	"gonbp/internal/nbpapi"
 	"testing"
 	"time"
 
@@ -16,28 +15,25 @@ func day(year, month, day int) time.Time {
 }
 
 type mockResponse struct {
-	code int
-	body string
-	err  error
+	rates *nbpapi.Rates
+	err   error
 }
 
 type mockClient struct {
 	urls map[string]mockResponse
 }
 
-func (m *mockClient) Get(url string) (*http.Response, error) {
+func (m *mockClient) Get(curr string, day time.Time) (*nbpapi.Rates, error) {
+	url := fmt.Sprintf("%s/%s", curr, day.Format("2006-01-02"))
 	var resp mockResponse
 	var ok bool
 	if resp, ok = m.urls[url]; !ok {
-		panic("response not set up for url: " + url)
+		panic("response not set up for " + url)
 	}
 	if resp.err != nil {
 		return nil, resp.err
 	}
-	return &http.Response{
-		StatusCode: resp.code,
-		Body:       io.NopCloser(strings.NewReader(resp.body)),
-	}, nil
+	return resp.rates, nil
 }
 
 func TestNBP_Rate(t *testing.T) {
@@ -52,9 +48,19 @@ func TestNBP_Rate(t *testing.T) {
 		{
 			name: "Positive case EUR",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-15": {
-					code: 200,
-					body: `{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.6378}]}`,
+				"EUR/2022-04-15": {
+					rates: &nbpapi.Rates{
+						Table:    "A",
+						Currency: "euro",
+						Code:     "EUR",
+						Rates: []nbpapi.DailyRate{
+							{
+								No:            "074/A/NBP/2022",
+								EffectiveDate: "2022-04-15",
+								Mid:           decimal.NewFromFloat(4.6378),
+							},
+						},
+					},
 				},
 			},
 			curr: EUR,
@@ -69,9 +75,19 @@ func TestNBP_Rate(t *testing.T) {
 		{
 			name: "Positive case CHF",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/CHF/2021-04-15": {
-					code: 200,
-					body: `{"table":"A","currency":"frank szwajcarski","code":"CHF","rates":[{"no":"072/A/NBP/2021","effectiveDate":"2021-04-15","mid":4.1198}]}`,
+				"CHF/2021-04-15": {
+					rates: &nbpapi.Rates{
+						Table:    "A",
+						Currency: "frank szwajcarski",
+						Code:     "CHF",
+						Rates: []nbpapi.DailyRate{
+							{
+								No:            "072/A/NBP/2021",
+								EffectiveDate: "2021-04-15",
+								Mid:           decimal.NewFromFloat(4.1198),
+							},
+						},
+					},
 				},
 			},
 			curr: CHF,
@@ -86,9 +102,8 @@ func TestNBP_Rate(t *testing.T) {
 		{
 			name: "Not found for a given day",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-16": {
-					code: 404,
-					body: `404 NotFound - Not Found - Brak danych`,
+				"EUR/2022-04-16": {
+					err: nbpapi.ErrNoExchangeRateForGivenDay,
 				},
 			},
 			curr:    EUR,
@@ -98,9 +113,8 @@ func TestNBP_Rate(t *testing.T) {
 		{
 			name: "Non existing currency",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/DOGE/2022-04-15": {
-					code: 404,
-					body: `404 NotFound`,
+				"DOGE/2022-04-15": {
+					err: nbpapi.ErrNoExchangeRateForGivenDay,
 				},
 			},
 			curr:    "DOGE",
@@ -112,7 +126,7 @@ func TestNBP_Rate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			n := &NBP{
-				httpClient: &mockClient{urls: tt.urls},
+				api: &mockClient{urls: tt.urls},
 			}
 			got, err := n.Rate(tt.curr, tt.day)
 			if (err != nil) != tt.wantErr {
@@ -138,9 +152,19 @@ func TestNBP_PreviousRate(t *testing.T) {
 		{
 			name: "Go back a day",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-15": {
-					code: 200,
-					body: `{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.6378}]}`,
+				"EUR/2022-04-15": {
+					rates: &nbpapi.Rates{
+						Table:    "A",
+						Currency: "euro",
+						Code:     "EUR",
+						Rates: []nbpapi.DailyRate{
+							{
+								No:            "074/A/NBP/2022",
+								EffectiveDate: "2022-04-15",
+								Mid:           decimal.NewFromFloat(4.6378),
+							},
+						},
+					},
 				},
 			},
 			curr: EUR,
@@ -155,17 +179,25 @@ func TestNBP_PreviousRate(t *testing.T) {
 		{
 			name: "Go back over a long weekend",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-17": {
-					code: 404,
-					body: `404 NotFound - Not Found - Brak danych`,
+				"EUR/2022-04-17": {
+					err: nbpapi.ErrNoExchangeRateForGivenDay,
 				},
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-16": {
-					code: 404,
-					body: `404 NotFound - Not Found - Brak danych`,
+				"EUR/2022-04-16": {
+					err: nbpapi.ErrNoExchangeRateForGivenDay,
 				},
-				"https://api.nbp.pl/api/exchangerates/rates/A/EUR/2022-04-15": {
-					code: 200,
-					body: `{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.6378}]}`,
+				"EUR/2022-04-15": {
+					rates: &nbpapi.Rates{
+						Table:    "A",
+						Currency: "euro",
+						Code:     "EUR",
+						Rates: []nbpapi.DailyRate{
+							{
+								No:            "074/A/NBP/2022",
+								EffectiveDate: "2022-04-15",
+								Mid:           decimal.NewFromFloat(4.6378),
+							},
+						},
+					},
 				},
 			},
 			curr: EUR,
@@ -180,9 +212,8 @@ func TestNBP_PreviousRate(t *testing.T) {
 		{
 			name: "Non-existing currency",
 			urls: map[string]mockResponse{
-				"https://api.nbp.pl/api/exchangerates/rates/A/DOGE/2022-04-15": {
-					code: 404,
-					body: `404 NotFound`,
+				"DOGE/2022-04-15": {
+					err: nbpapi.ErrNoRatesForCurrency,
 				},
 			},
 			curr:    "DOGE",
@@ -194,7 +225,7 @@ func TestNBP_PreviousRate(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			n := &NBP{
-				httpClient: &mockClient{urls: tt.urls},
+				api: &mockClient{urls: tt.urls},
 			}
 			got, err := n.PreviousRate(tt.curr, tt.day)
 			if (err != nil) != tt.wantErr {
