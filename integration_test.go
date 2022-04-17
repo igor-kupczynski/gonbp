@@ -60,5 +60,35 @@ func TestRate(t *testing.T) {
 			t.Errorf("Rate() error = %v, want %v", gotErr, wantErr)
 		}
 	})
+}
+
+func TestPreviousRate(t *testing.T) {
+	nbp := New()
+
+	t.Run("USD go back over a long weekend happy case", func(t *testing.T) {
+		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.2865}]}
+		want := &Rate{
+			TableNo: "074/A/NBP/2022",
+			Day:     day(2022, 4, 15),
+			Mid:     decimal.NewFromFloat(4.2865),
+		}
+		got, err := nbp.PreviousRate(USD, day(2022, 4, 18))
+		if err != nil {
+			t.Errorf("Rate() error = %v, want no error", err)
+			return
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("Rate() mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("Non-existing currency", func(t *testing.T) {
+		// 404 NotFound
+		wantErr := ErrNoRatesForCurrency{Curr: "DOGE"}
+		_, gotErr := nbp.Rate("DOGE", day(2022, 4, 16))
+		if gotErr != wantErr {
+			t.Errorf("Rate() error = %v, want %v", gotErr, wantErr)
+		}
+	})
 
 }
