@@ -2,8 +2,10 @@
 package gonbp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -36,9 +38,7 @@ type NBP struct {
 
 // New returns *NBP instance with net/http.DefaultClient
 func New() *NBP {
-	return &NBP{
-		httpClient: http.DefaultClient,
-	}
+	return WithClient(http.DefaultClient)
 }
 
 // WithClient returns *NBP instance with given http.Client
@@ -57,6 +57,34 @@ const (
 	USD Currency = "USD"
 )
 
+// ErrNoExchangeRateForGivenDay represents a failure where there are no published rates for a given day
+type ErrNoExchangeRateForGivenDay struct {
+	Day time.Time
+}
+
+func (e ErrNoExchangeRateForGivenDay) Error() string {
+	return fmt.Sprintf("no exchange rate for given date %s", e.Day.Format("2006-01-02"))
+}
+
+// ErrNoRatesForCurrency represents a failure where NBP doesn't publish exchange rates for the given currency
+type ErrNoRatesForCurrency struct {
+	Curr Currency
+}
+
+func (e ErrNoRatesForCurrency) Error() string {
+	return fmt.Sprintf("currency without published rates %s", e.Curr)
+}
+
+// ErrApiCallUnsuccessful represents a generic unsuccessful API call
+type ErrApiCallUnsuccessful struct {
+	Code int
+	Body string
+}
+
+func (e ErrApiCallUnsuccessful) Error() string {
+	return fmt.Sprintf("unsuccssesful API call, code %d, body %s", e.Code, e.Body)
+}
+
 // Rate represents the currency exchange rate for a given date
 type Rate struct {
 	TableNo string
@@ -70,6 +98,26 @@ func (n *NBP) Rate(curr Currency, day time.Time) (*Rate, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't connect to NBP api: %w", err)
 	}
+
+	if resp.StatusCode == 404 {
+		buf, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("can't read response: %w", err)
+		}
+		if bytes.Contains(buf, []byte("Brak danych")) {
+			return nil, ErrNoExchangeRateForGivenDay{Day: day}
+		}
+		return nil, ErrNoRatesForCurrency{Curr: curr}
+	}
+
+	if resp.StatusCode != 200 {
+		buf, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("can't read response: %w", err)
+		}
+		return nil, ErrApiCallUnsuccessful{Code: resp.StatusCode, Body: string(buf)}
+	}
+
 	var rawRate rawRate
 	if err := json.NewDecoder(resp.Body).Decode(&rawRate); err != nil {
 		return nil, fmt.Errorf("can't decode response: %w", err)

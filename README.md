@@ -8,3 +8,8 @@ of _Złoty_ (the Polish currency) against other currencies. [NBP provides an
 API to access the exchange rates](http://api.nbp.pl/en.html).
 
 **Status**: Work in progress.
+
+
+## Use as a library
+
+See [`integration_test.go`](https://github.com/igor-kupczynski/gonbp/blob/main/gonbp_test.go).
