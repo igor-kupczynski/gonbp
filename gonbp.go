@@ -92,7 +92,7 @@ type Rate struct {
 	Mid     decimal.Decimal
 }
 
-//Rate returns the currency exchange rate for a given date from NBP table A
+// Rate returns the currency exchange rate for a given date from NBP table A
 func (n *NBP) Rate(curr Currency, day time.Time) (*Rate, error) {
 	resp, err := n.httpClient.Get(fmt.Sprintf("%s/%s/%s", apiBase, curr, day.Format("2006-01-02")))
 	if err != nil {
@@ -135,4 +135,21 @@ func (n *NBP) Rate(curr Currency, day time.Time) (*Rate, error) {
 		Day:     effectiveDay,
 		Mid:     rate.Mid,
 	}, nil
+}
+
+// PreviousRate returns the currency exchange rate for the last working day before the given day
+func (n *NBP) PreviousRate(curr Currency, day time.Time) (*Rate, error) {
+	checkForDay := day.AddDate(0, 0, -1)
+	for {
+		rate, err := n.Rate(curr, checkForDay)
+		noRateForDay := ErrNoExchangeRateForGivenDay{Day: checkForDay}
+		if err == noRateForDay {
+			checkForDay = checkForDay.AddDate(0, 0, -1)
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		return rate, nil
+	}
 }
