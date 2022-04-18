@@ -4,10 +4,12 @@ package gonbp
 import (
 	"errors"
 	"fmt"
+	"gonbp/internal/cachedapi"
 	"gonbp/internal/nbpapi"
 	"net/http"
 	"time"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/shopspring/decimal"
 )
 
@@ -21,13 +23,17 @@ type NBP struct {
 }
 
 // Init returns *NBP instance with a given httpClient
-func Init(client *http.Client) *NBP {
-	return &NBP{api: nbpapi.Init(client)}
+func Init(cacheDir string, client *http.Client) *NBP {
+	return &NBP{api: cachedapi.Init(cacheDir, client)}
 }
 
-// Default returns *NBP instance using http.DefaultClient
-func Default() *NBP {
-	return Init(http.DefaultClient)
+// Default returns *NBP instance using http.DefaultClient and $HOME/.config/nbp
+func Default() (*NBP, error) {
+	cacheDir, err := homedir.Expand("~/.config/nbp")
+	if err != nil {
+		return nil, err
+	}
+	return Init(cacheDir, http.DefaultClient), nil
 }
 
 // Currency enumerates supported currencies

@@ -8,7 +8,10 @@ import (
 )
 
 func TestIntegrationRate(t *testing.T) {
-	nbp := Default()
+	nbp, err := Default()
+	if err != nil {
+		t.Fatalf("Can't initialize the NBP api: %v", err)
+	}
 
 	t.Run("USD happy case", func(t *testing.T) {
 		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"043/A/NBP/2022","effectiveDate":"2022-03-03","mid":4.3257}]}
@@ -64,7 +67,10 @@ func TestIntegrationRate(t *testing.T) {
 }
 
 func TestIntegrationPreviousRate(t *testing.T) {
-	nbp := Default()
+	nbp, err := Default()
+	if err != nil {
+		t.Fatalf("Can't initialize the NBP api: %v", err)
+	}
 
 	t.Run("USD go back over a long weekend happy case", func(t *testing.T) {
 		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"074/A/NBP/2022","effectiveDate":"2022-04-15","mid":4.2865}]}
