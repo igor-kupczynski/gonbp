@@ -2,7 +2,9 @@ package cachedapi
 
 import (
 	"encoding/json"
+	"errors"
 	"gonbp/internal/nbpapi"
+	"io/fs"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -45,12 +47,42 @@ type cacheValue struct {
 	Rates *nbpapi.Rates `json:"Rates,omitempty"`
 }
 
+var noValueForDay = &cacheValue{Rates: nil}
+
 // Get returns the currency exchange rate for a given date from NBP table A
 //
 // Get first checks the on-disk cache and falls-back to nbpapi.Client.
 func (c *Client) Get(curr string, day time.Time) (*nbpapi.Rates, error) {
-	//TODO implement me
-	panic("implement me")
+	key := cacheKey{curr: curr, day: day}
+	v, err := c.get(key)
+
+	if err == nil {
+		if v.Rates == nil {
+			return nil, nbpapi.ErrNoExchangeRateForGivenDay
+		}
+		return v.Rates, nil
+	}
+
+	var pathError *fs.PathError
+	if !errors.As(err, &pathError) {
+		return nil, err
+	}
+
+	got, err := c.api.Get(curr, day)
+	if err == nbpapi.ErrNoExchangeRateForGivenDay {
+		if err := c.set(key, noValueForDay); err != nil {
+			return nil, err
+		}
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := c.set(key, &cacheValue{got}); err != nil {
+		return nil, err
+	}
+
+	return got, nil
 }
 
 func (c *Client) get(k cacheKey) (*cacheValue, error) {
