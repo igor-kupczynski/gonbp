@@ -2,50 +2,38 @@
 package gonbp
 
 import (
-	"bytes"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
+	"gonbp/internal/cachedapi"
+	"gonbp/internal/nbpapi"
 	"net/http"
 	"time"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/shopspring/decimal"
 )
 
-const (
-	apiBase = "https://api.nbp.pl/api/exchangerates/rates/A"
-)
-
-type rawRate struct {
-	Table    string `json:"table"`
-	Currency string `json:"currency"`
-	Code     string `json:"code"`
-	Rates    []struct {
-		No            string          `json:"no"`
-		EffectiveDate string          `json:"effectiveDate"`
-		Mid           decimal.Decimal `json:"mid"`
-	} `json:"rates"`
-}
-
-type httpClient interface {
-	Get(url string) (resp *http.Response, err error)
+type nbpAPIClient interface {
+	Get(curr string, day time.Time) (*nbpapi.Rates, error)
 }
 
 // NBP is the NBP API client
 type NBP struct {
-	httpClient httpClient
+	api nbpAPIClient
 }
 
-// New returns *NBP instance with net/http.DefaultClient
-func New() *NBP {
-	return WithClient(http.DefaultClient)
+// Init returns *NBP instance with a given httpClient
+func Init(cacheDir string, client *http.Client) *NBP {
+	return &NBP{api: cachedapi.Init(cacheDir, client)}
 }
 
-// WithClient returns *NBP instance with given http.Client
-func WithClient(client *http.Client) *NBP {
-	return &NBP{
-		httpClient: client,
+// Default returns *NBP instance using http.DefaultClient and $HOME/.config/nbp
+func Default() (*NBP, error) {
+	cacheDir, err := homedir.Expand("~/.config/nbp")
+	if err != nil {
+		return nil, err
 	}
+	return Init(cacheDir, http.DefaultClient), nil
 }
 
 // Currency enumerates supported currencies
@@ -57,34 +45,6 @@ const (
 	USD Currency = "USD"
 )
 
-// ErrNoExchangeRateForGivenDay represents a failure where there are no published rates for a given day
-type ErrNoExchangeRateForGivenDay struct {
-	Day time.Time
-}
-
-func (e ErrNoExchangeRateForGivenDay) Error() string {
-	return fmt.Sprintf("no exchange rate for given date %s", e.Day.Format("2006-01-02"))
-}
-
-// ErrNoRatesForCurrency represents a failure where NBP doesn't publish exchange rates for the given currency
-type ErrNoRatesForCurrency struct {
-	Curr Currency
-}
-
-func (e ErrNoRatesForCurrency) Error() string {
-	return fmt.Sprintf("currency without published rates %s", e.Curr)
-}
-
-// ErrApiCallUnsuccessful represents a generic unsuccessful API call
-type ErrApiCallUnsuccessful struct {
-	Code int
-	Body string
-}
-
-func (e ErrApiCallUnsuccessful) Error() string {
-	return fmt.Sprintf("unsuccssesful API call, code %d, body %s", e.Code, e.Body)
-}
-
 // Rate represents the currency exchange rate for a given date
 type Rate struct {
 	TableNo string
@@ -94,38 +54,14 @@ type Rate struct {
 
 // Rate returns the currency exchange rate for a given date from NBP table A
 func (n *NBP) Rate(curr Currency, day time.Time) (*Rate, error) {
-	resp, err := n.httpClient.Get(fmt.Sprintf("%s/%s/%s", apiBase, curr, day.Format("2006-01-02")))
+	apiRates, err := n.api.Get(string(curr), day)
 	if err != nil {
-		return nil, fmt.Errorf("can't connect to NBP api: %w", err)
+		return nil, err
 	}
-
-	if resp.StatusCode == 404 {
-		buf, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("can't read response: %w", err)
-		}
-		if bytes.Contains(buf, []byte("Brak danych")) {
-			return nil, ErrNoExchangeRateForGivenDay{Day: day}
-		}
-		return nil, ErrNoRatesForCurrency{Curr: curr}
+	if len(apiRates.Rates) != 1 {
+		return nil, fmt.Errorf("expectation failed: wanted a single rate, instead got %v", apiRates.Rates)
 	}
-
-	if resp.StatusCode != 200 {
-		buf, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("can't read response: %w", err)
-		}
-		return nil, ErrApiCallUnsuccessful{Code: resp.StatusCode, Body: string(buf)}
-	}
-
-	var rawRate rawRate
-	if err := json.NewDecoder(resp.Body).Decode(&rawRate); err != nil {
-		return nil, fmt.Errorf("can't decode response: %w", err)
-	}
-	if len(rawRate.Rates) != 1 {
-		return nil, fmt.Errorf("expectation failed: wanted a single rate, instead got %v", rawRate.Rates)
-	}
-	rate := rawRate.Rates[0]
+	rate := apiRates.Rates[0]
 	effectiveDay, err := time.Parse("2006-01-02", rate.EffectiveDate)
 	if err != nil {
 		return nil, fmt.Errorf("expectation failed: can't parse date as day %s", rate.EffectiveDate)
@@ -142,8 +78,7 @@ func (n *NBP) PreviousRate(curr Currency, day time.Time) (*Rate, error) {
 	checkForDay := day.AddDate(0, 0, -1)
 	for {
 		rate, err := n.Rate(curr, checkForDay)
-		noRateForDay := ErrNoExchangeRateForGivenDay{Day: checkForDay}
-		if err == noRateForDay {
+		if errors.Is(err, nbpapi.ErrNoExchangeRateForGivenDay) {
 			checkForDay = checkForDay.AddDate(0, 0, -1)
 			continue
 		}
