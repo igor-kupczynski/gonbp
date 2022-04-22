@@ -3,8 +3,8 @@ package cachedapi
 import (
 	"errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/igor-kupczynski/gonbp/internal/nbpapi"
 	"github.com/shopspring/decimal"
-	"gonbp/internal/nbpapi"
 	"io/fs"
 	"io/ioutil"
 	"log"

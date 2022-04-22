@@ -3,7 +3,7 @@ package cachedapi
 import (
 	"encoding/json"
 	"errors"
-	"gonbp/internal/nbpapi"
+	"github.com/igor-kupczynski/gonbp/internal/nbpapi"
 	"io/fs"
 	"io/ioutil"
 	"net/http"

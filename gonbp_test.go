@@ -2,8 +2,8 @@ package gonbp
 
 import (
 	"fmt"
+	"github.com/igor-kupczynski/gonbp/internal/nbpapi"
 	"github.com/shopspring/decimal"
-	"gonbp/internal/nbpapi"
 	"testing"
 	"time"
 

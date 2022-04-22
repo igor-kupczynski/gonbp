@@ -1,4 +1,4 @@
-module gonbp
+module github.com/igor-kupczynski/gonbp
 
 go 1.18
 

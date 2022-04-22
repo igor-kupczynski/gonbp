@@ -2,8 +2,8 @@ package gonbp
 
 import (
 	"github.com/google/go-cmp/cmp"
+	"github.com/igor-kupczynski/gonbp/internal/nbpapi"
 	"github.com/shopspring/decimal"
-	"gonbp/internal/nbpapi"
 	"io/ioutil"
 	"net/http"
 	"os"

@@ -4,8 +4,8 @@ package gonbp
 import (
 	"errors"
 	"fmt"
-	"gonbp/internal/cachedapi"
-	"gonbp/internal/nbpapi"
+	"github.com/igor-kupczynski/gonbp/internal/cachedapi"
+	"github.com/igor-kupczynski/gonbp/internal/nbpapi"
 	"net/http"
 	"time"
 

@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gonbp"
+	"github.com/igor-kupczynski/gonbp"
 	"log"
 	"strings"
 	"time"
