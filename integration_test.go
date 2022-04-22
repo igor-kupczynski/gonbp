@@ -6,7 +6,9 @@ import (
 	"gonbp/internal/nbpapi"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
+	"time"
 )
 
 func TestIntegrationRate(t *testing.T) {
@@ -16,7 +18,10 @@ func TestIntegrationRate(t *testing.T) {
 		t.Fatalf("Can't create the temp dir: %v", err)
 		return
 	}
+	defer os.Remove(base)
 	nbp := Init(base, http.DefaultClient)
+
+	var nonCached, cached time.Duration
 
 	t.Run("USD happy case", func(t *testing.T) {
 		// {"table":"A","currency":"dolar amerykański","code":"USD","rates":[{"no":"043/A/NBP/2022","effectiveDate":"2022-03-03","mid":4.3257}]}
@@ -25,13 +30,34 @@ func TestIntegrationRate(t *testing.T) {
 			Day:     day(2022, 3, 3),
 			Mid:     decimal.NewFromFloat(4.3257),
 		}
+		t1 := time.Now()
 		got, err := nbp.Rate(USD, day(2022, 3, 3))
+		nonCached = time.Now().Sub(t1)
 		if err != nil {
 			t.Errorf("Rate() error = %v, want no error", err)
 			return
 		}
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("Rate() mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("USD from cache", func(t *testing.T) {
+		t1 := time.Now()
+		_, err := nbp.Rate(USD, day(2022, 3, 3))
+		cached = time.Now().Sub(t1)
+		if err != nil {
+			t.Errorf("Rate() error = %v, want no error", err)
+			return
+		}
+
+		if cached > nonCached {
+			t.Errorf(
+				"Expected a faster response from cache, got cached %d ms vs non-cached %d ms",
+				cached.Microseconds(),
+				nonCached.Microseconds(),
+			)
+			return
 		}
 	})
 
@@ -77,6 +103,7 @@ func TestIntegrationPreviousRate(t *testing.T) {
 		t.Fatalf("Can't create the temp dir: %v", err)
 		return
 	}
+	defer os.Remove(base)
 	nbp := Init(base, http.DefaultClient)
 
 	t.Run("USD go back over a long weekend happy case", func(t *testing.T) {
